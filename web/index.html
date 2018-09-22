@@ -1,50 +1,71 @@
 <!doctype html>
-
 <html>
 
 <head>
 	<style type="text/css">
-		#movie {
-			background: url(filmstrip.jpg);
+		#viewer {
+			background-color: #eee;
+			border: 1px solid #ddd;
+			cursor: pointer;
 			height: 400px;
 			width: 400px;
+		}
+
+		#viewer>.filmstrip-loader {
+			display: block;
+			padding: 30px;
 		}
 	</style>
 </head>
 
 <body>
-	<div id="movie"></div>
+	<div id="viewer" data-filmstrip=''>
+		<div class="filmstrip-loader">Loading 360 viewer...</div>
+	</div>
+	<div class="controls">
+		<button disabled="disabled" class="filmstrip-play">Play</button>
+		<button disabled="disabled" class="filmstrip-stop">Stop</button>
+	</div>
 	<script src="https://code.jquery.com/jquery-2.2.4.min.js" integrity="sha256-BbhdlvQf/xTY9gja0Dq3HiwQF8LaCRTXxZKRutelT44="
 	 crossorigin="anonymous"></script>
+	<script src="filmstrip.js"></script>
 	<script>
-		var row = 1;
-		var col = 1;
-		var frame = 1;
-		var size = 400;
-		var numFrames = 241;
-		var div = $('#movie');
+		$(function () {
+			var viewer = $('#viewer');
 
-		setInterval(function () {
+			viewer.filmstrip({
+				autoLoad: true,
+				autoPlay: false,
+				frameHeight: 400,
+				frameWidth: 400,
+				numFrames: 241,
+				speed: 50,
+				spriteUrl: 'filmstrip.jpg',
+				onLoad: function () {
+					$('.filmstrip-play').removeAttr('disabled');
+				},
+				onPlay: function () {
+					$('.filmstrip-play').attr('disabled', 'disabled');
+					$('.filmstrip-stop').removeAttr('disabled');
+				},
+				onStop: function () {
+					$('.filmstrip-stop').attr('disabled', 'disabled');
+					$('.filmstrip-play').removeAttr('disabled');
+				},
+				onDrag: function () {
+					$('.filmstrip-stop').attr('disabled', 'disabled');
+					$('.filmstrip-play').removeAttr('disabled');
+				}
+			})
 
-			if (frame > numFrames) {
-				frame = 1;
-				col = 1;
-				row = 1;
-			} else if (col > 20) {
-				col = 1;
-				row++;
-			}
+			$('.filmstrip-play').click(function () {
+				viewer.filmstrip('play');
+			});
 
-			var pos = {
-				x: (col - 1) * -size,
-				y: (row - 1) * -size
-			};
-
-			div.css({ backgroundPositionX: pos.x, backgroundPositionY: pos.y });
-
-			frame++;
-			col++;
-		}, 50);
+			$('.filmstrip-stop').click(function () {
+				viewer.filmstrip('stop');
+			});
+		});
 	</script>
 </body>
 
