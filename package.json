@@ -1,0 +1,21 @@
+{
+  "name": "swf-export",
+  "version": "1.0.0",
+  "description": "This repo defines a process for extracting images from a SWF video file and constructing a filmstrip that can be consumed by a JavaScript player.",
+  "scripts": {
+    "pad-files": "node pad-files.js",
+    "make-filmstrips": "gulp"
+  },
+  "author": "Jared Jensen",
+  "license": "ISC",
+  "devDependencies": {
+    "gulp": "^3.9.1",
+    "gulp-csso": "^3.0.0",
+    "gulp-if": "^2.0.2",
+    "gulp-imagemin": "^4.0.0",
+    "gulp.spritesmith": "^6.7.0",
+    "gulp.spritesmith-multi": "^3.1.0",
+    "layout": "^2.2.0",
+    "merge-stream": "^1.0.1"
+  }
+}
