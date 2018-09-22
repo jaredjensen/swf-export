@@ -36,7 +36,7 @@ gulp.task('sprite', () => {
     .pipe(gulp.dest('build'));
 });
 
-gulp.task('optimize', ['sprite'], () => {
+gulp.task('optimize', () => {
   return gulp
     .src('build/*.jpg')
     .pipe(
@@ -50,4 +50,4 @@ gulp.task('optimize', ['sprite'], () => {
     .pipe(gulp.dest('final'));
 });
 
-gulp.task('default', ['sprite', 'optimize']);
+gulp.task('default', gulp.series('sprite', 'optimize'));
