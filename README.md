@@ -21,10 +21,10 @@ Download and install JPEXS (only FFDec option is required during installation). 
 # install dependencies
 npm i
 
-# rename images to pad with zeroes to ensure proper sequence
-npm run pad-files
+# rename images to pad with zeroes and ensure contiguous sequence
+npm run rename-files
 
-# create optimized filmstrips in "final" folder
+# create optimized filmstrips in "final" folder (if spriting)
 npm run make-filmstrips
 ```
 
@@ -36,6 +36,7 @@ You can customize the filmstrip sprite-creation behavior by adjusting three vari
 const COMPRESSION = 50; // JPG compression percentage
 const OPTIMIZATION = 6; // Image optimization level (1-7)
 const USE_COLUMNS = true; // Arrange images into 20 columns
+const PROGRESSIVE = false; // Whether the final JPEG should be progressive
 ```
 
 ## Demo

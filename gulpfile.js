@@ -1,6 +1,7 @@
 const COMPRESSION = 50; // JPG compression percentage
 const OPTIMIZATION = 6; // Image optimization level (1-7)
 const USE_COLUMNS = true; // Arrange images into 20 columns
+const PROGRESSIVE = false; // Whether the final JPEG should be progressive
 
 const gulp = require('gulp');
 const spritesmith = require('gulp.spritesmith-multi');
@@ -41,8 +42,8 @@ gulp.task('optimize', () => {
     .src('build/*.jpg')
     .pipe(
       imagemin([
-        imagemin.gifsicle({ interlaced: true }),
-        imagemin.jpegtran({ progressive: true }),
+        //imagemin.gifsicle({ interlaced: true }),
+        imagemin.jpegtran({ progressive: PROGRESSIVE }),
         imagemin.optipng({ optimizationLevel: OPTIMIZATION }),
       ]),
     )

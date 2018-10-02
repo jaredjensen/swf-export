@@ -1,47 +1,27 @@
 (function($) {
   function moveHead($el, o, direction) {
-    var head = $el.data('filmstripHead');
-    o = o || opts($el);
-
-    // Set the head position
-    if (direction > 0) {
-      head.frame++;
-      head.col++;
-      if (head.frame > o.numFrames) {
-        // Go to frame 1
-        head.frame = 1;
-        head.col = 1;
-        head.row = 1;
-      } else if (head.col > o.grid.cols) {
-        // Go to next row
-        head.col = 1;
-        head.row++;
-      }
-    } else if (direction < 0) {
-      head.frame--;
-      head.col--;
-      if (head.frame < 1) {
-        // Go to last frame
-        head.frame = o.numFrames;
-        head.col = o.grid.colsInLastRow;
-        head.row = o.grid.rows;
-      } else if (head.col < 1) {
-        // Go to previous row
-        head.col = o.grid.cols;
-        head.row--;
-      }
-    } else {
+    if (direction === 0) {
       return;
     }
 
-    // Set the image position
-    var pos = {
-      x: (head.col - 1) * -o.frameWidth,
-      y: (head.row - 1) * -o.frameHeight,
-    };
-    $el.css({ backgroundPositionX: pos.x, backgroundPositionY: pos.y });
+    o = o || opts($el);
 
-    $el.data('filmstripHead', head);
+    if (direction > 0) {
+      o.frame++;
+      if (o.frame > o.numFrames) {
+        o.frame = 1;
+      }
+    } else {
+      o.frame--;
+      if (o.frame < 1) {
+        o.frame = o.numFrames;
+      }
+    }
+
+    var src = imageUrl(o, o.frame);
+    o.img.attr('src', src);
+
+    opts($el, { frame: o.frame });
   }
 
   function play($el) {
@@ -76,7 +56,30 @@
     fireEvent($el, 'onDragStop');
   }
 
-  function loadImage($el) {
+  function pad(s, len) {
+    s = s.toString();
+    while (s.length < len) {
+      s = '0' + s;
+    }
+    return s;
+  }
+
+  function imageUrl(opts, i) {
+    var len = opts.numFrames.toString().length;
+    return opts.baseUrl + pad(i, len) + '.jpg';
+  }
+
+  function loadImage(url) {
+    var d = $.Deferred();
+    var tmp = new Image();
+    tmp.onload = function() {
+      d.resolve();
+    };
+    tmp.src = url;
+    return d;
+  }
+
+  function loadImages($el) {
     var d = $.Deferred();
     var o = opts($el);
 
@@ -88,43 +91,60 @@
     }
     $loader.show();
 
-    // Load the image and viewer
-    var tmp = new Image();
-    tmp.onload = function(e) {
-      // Calculate the sprite grid
-      var img = e.path[0];
-      var cols = img.width / o.frameWidth;
-      var rows = img.height / o.frameHeight;
-      var colsInLastRow = cols - (cols * rows - o.numFrames);
-      opts($el, {
-        grid: {
-          cols,
-          rows,
-          colsInLastRow,
-        },
-      });
+    // Load images asynchronously
+    var promises = [];
+    var len = o.numFrames.toString().length;
+    for (var i = 0; i < o.numFrames; i++) {
+      var url = imageUrl(o, i + 1);
+      promises.push(loadImage(url));
+    }
 
-      // Set the image and remove loader
-      $el.html('').css('backgroundImage', 'url("' + o.spriteUrl + '")');
-      $loader.remove();
+    $.when
+      .apply($, promises)
+      .done(function() {
+        // Set the image and remove loader
+        var $img = $('<img/>');
+        $img.attr('src', imageUrl(o, o.frame));
+        $el.html('').append($img);
+        $loader.remove();
 
-      // Hook drag events
-      $el.on('mousedown', function(e) {
-        startDrag($el, e.clientX);
-      });
-      $el.on('mousemove', function(e) {
-        if (e.buttons) {
-          onDrag($el, e.clientX);
-        }
-      });
-      $el.on('mouseleave mouseup', function() {
-        stopDrag($el);
-      });
+        // Add cover to handle drag events
+        var $cover = $('<div/>');
+        $el.append($cover);
 
-      d.resolve($el, o);
-      fireEvent($el, 'onLoad');
-    };
-    tmp.src = o.spriteUrl;
+        opts($el, {
+          img: $img,
+        });
+
+        // Hook drag events
+        $cover.on('mousedown touchstart', function(e) {
+          var x = e.clientX || e.originalEvent.touches[0].clientX;
+          startDrag($el, x);
+        });
+        $cover.on('mousemove', function(e) {
+          if (e.buttons) {
+            onDrag($el, e.clientX);
+          }
+        });
+        $cover.on('touchmove', function(e) {
+          onDrag($el, e.originalEvent.touches[0].clientX);
+        });
+        $cover.on('mouseleave mouseup touchend', function() {
+          stopDrag($el);
+        });
+
+        fireEvent($el, 'onLoad');
+
+        d.resolve($el, o);
+
+        setTimeout(function() {
+          $cover.animate({ opacity: 0 }, 1000);
+        }, 100);
+      })
+      .fail(function() {
+        d.reject();
+        console.log('Failed to load images');
+      });
 
     return d;
   }
@@ -146,7 +166,7 @@
     var name = 'filmstripOptions';
     var oldOpts = $el.data(name) || {};
     if (opts) {
-      var newOpts = Object.assign({}, oldOpts, opts);
+      var newOpts = $.extend({}, oldOpts, opts);
       $el.data(name, newOpts);
     }
     return oldOpts;
@@ -182,28 +202,19 @@
     var defaultOptions = {
       autoLoad: true,
       autoPlay: true,
-      cols: 1,
-      frameHeight: 400,
-      frameWidth: 400,
+      baseUrl: '',
+      frame: 1,
       numFrames: 1,
       speed: 50,
-      spriteUrl: '',
     };
-    var o = Object.assign({}, defaultOptions, $el.data('filmstrip'), options);
+    var o = $.extend({}, defaultOptions, $el.data('filmstrip'), options);
     opts($el, o);
 
-    // Initialize play head
-    var head = {
-      col: 1,
-      frame: 1,
-      row: 1,
-    };
-    $el.data('filmstripHead', head);
     $el.addClass('filmstrip');
 
     // Conditionally auto-play
     if (o.autoLoad) {
-      loadImage($el).then(function() {
+      loadImages($el).then(function() {
         if (o.autoPlay) {
           play($el);
         }

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "This repo defines a process for extracting images from a SWF video file and constructing a filmstrip that can be consumed by a JavaScript player.",
   "scripts": {
-    "pad-files": "node pad-files.js",
+    "rename-files": "node rename-files.js",
     "make-filmstrips": "gulp"
   },
   "author": "Jared Jensen",
